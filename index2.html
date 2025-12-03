@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导员工作日志 - 划掉隐藏版</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        /* 头部样式 */
+        .app-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 30px;
+            position: relative;
+        }
+        
+        .app-header h1 {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .date-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+            opacity: 0.9;
+        }
+        
+        /* 添加任务区域 */
+        .add-task-section {
+            padding: 25px 30px;
+            border-bottom: 1px solid #eef2f7;
+            background: #f8fafc;
+        }
+        
+        .task-input-group {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .task-input {
+            flex: 1;
+            padding: 16px 20px;
+            border: 2px solid #e1e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        .task-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+        
+        .add-btn {
+            background: linear-gradient(135deg, #667eea 0%, #5a67d8 100%);
+            color: white;
+            border: none;
+            padding: 0 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            font-size: 15px;
+        }
+        
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* 任务列表容器 */
+        .task-list-container {
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 10px 5px;
+        }
+        
+        .task-list {
+            padding: 0 25px;
+            min-height: 200px;
+        }
+        
+        /* 任务项样式 */
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            padding: 20px;
+            margin-bottom: 12px;
+            background: white;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .task-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        
+        /* 任务状态指示器 */
+        .task-status {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: #667eea;
+            transition: all 0.4s;
+        }
+        
+        /* 复选框样式 */
+        .task-checkbox {
+            width: 28px;
+            height: 28px;
+            border: 2px solid #cbd5e1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.3s;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .task-checkbox:hover {
+            border-color: #667eea;
+            transform: scale(1.1);
+        }
+        
+        .task-checkbox i {
+            font-size: 16px;
+            color: white;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s;
+        }
+        
+        .task-checkbox.checked {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-color: #10b981;
+        }
+        
+        .task-checkbox.checked i {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        /* 任务内容区域 */
+        .task-content {
+            flex: 1;
+            transition: all 0.5s ease-out;
+        }
+        
+        .task-text {
+            font-size: 17px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+            font-weight: 500;
+            transition: all 0.4s;
+            position: relative;
+        }
+        
+        /* 删除线动画效果 */
+        .strikethrough-effect {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .strikethrough-effect::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+            transform: translateY(-50%);
+            transition: width 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .strikethrough-effect.active::after {
+            width: 100%;
+        }
+        
+        /* 完成时间显示 */
+        .completion-time {
+            font-size: 12px;
+            color: #10b981;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 5px;
+            opacity: 0;
+            transform: translateY(5px);
+            transition: all 0.5s 0.3s;
+        }
+        
+        .completion-time.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* 任务分类标签 */
+        .task-category {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: #f1f5f9;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #64748b;
+            margin-right: 10px;
+        }
+        
+        /* 删除按钮 */
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        
+        .delete-btn:hover {
+            color: #ef4444;
+            background: #fee2e2;
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        
+        /* 完成任务后的状态 */
+        .task-item.completing {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(52, 211, 153, 0.05) 100%);
+            border-left-color: #10b981;
+        }
+        
+        .task-item.completed-hiding {
+            opacity: 0;
+            transform: translateX(100px) scale(0.9);
+            margin-bottom: -60px;
+            padding-top: 0;
+            padding-bottom: 0;
+            height: 0;
+            pointer-events: none;
+        }
+        
+        /* 统计区域 */
+        .stats-section {
+            padding: 25px 30px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-top: 1px solid #eef2f7;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+        
+        .empty-state i {
+            font-size: 60px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #64748b;
+        }
+        
+        .empty-state p {
+            font-size: 14px;
+        }
+        
+        /* 已完成任务区 */
+        .completed-section {
+            padding: 20px 30px;
+            background: #f8fafc;
+            border-top: 1px solid #eef2f7;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .section-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #64748b;
+            font-size: 16px;
+        }
+        
+        .toggle-completed {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .completed-list {
+            display: grid;
+            gap: 10px;
+        }
+        
+        .completed-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px;
+            background: white;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #94a3b8;
+            text-decoration: line-through;
+            opacity: 0.7;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 0.7; transform: translateY(0); }
+        }
+        
+        /* 滚动条样式 */
+        .task-list-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .task-list-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+        
+        .task-list-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        
+        .task-list-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .app-container { border-radius: 15px; }
+            .app-header, .add-task-section { padding: 20px; }
+            .task-list { padding: 0 15px; }
+            .stats-section { grid-template-columns: 1fr; gap: 15px; padding: 20px; }
+            .task-input-group { flex-direction: column; }
+            .add-btn { justify-content: center; padding: 16px; }
+            .task-item { padding: 18px 15px; gap: 15px; }
+        }
+        
+        /* 动画 */
+        @keyframes slideOut {
+            0% { 
+                opacity: 1;
+                transform: translateX(0) scale(1);
+                max-height: 100px;
+                margin-bottom: 12px;
+            }
+            50% {
+                opacity: 0.5;
+                transform: translateX(50px) scale(0.95);
+            }
+            100% { 
+                opacity: 0;
+                transform: translateX(100px) scale(0.9);
+                max-height: 0;
+                margin-bottom: -60px;
+                padding-top: 0;
+                padding-bottom: 0;
+            }
+        }
+        
+        @keyframes strikeThrough {
+            0% { width: 0; }
+            100% { width: 100%; }
+        }
+        
+        .slide-out {
+            animation: slideOut 1s forwards;
+        }
+        
+        .strike-animation {
+            animation: strikeThrough 0.6s forwards;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 应用头部 -->
+        <header class="app-header">
+            <h1><i class="bi bi-journal-check"></i> 导员工作日志</h1>
+            <div class="date-display">
+                <span id="currentDate">加载中...</span>
+                <span id="taskCount">0项任务</span>
+            </div>
+        </header>
+        
+        <!-- 添加新任务 -->
+        <section class="add-task-section">
+            <div class="task-input-group">
+                <input 
+                    type="text" 
+                    id="taskInput" 
+                    class="task-input" 
+                    placeholder="📝 输入今日工作事项，按Enter添加"
+                    autocomplete="off"
+                >
+                <button id="addBtn" class="add-btn">
+                    <i class="bi bi-plus-lg"></i> 添加
+                </button>
+            </div>
+        </section>
+        
+        <!-- 待办任务列表 -->
+        <div class="task-list-container">
+            <div class="task-list" id="taskList">
+                <!-- 任务项将通过JavaScript动态添加 -->
+                <div class="empty-state" id="emptyState">
+                    <i class="bi bi-check2-all"></i>
+                    <h3>今日工作安排</h3>
+                    <p>开始记录你今天的工作事项吧！</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 统计数据 -->
+        <section class="stats-section">
+            <div class="stat-card">
+                <div class="stat-value" id="statPending">0</div>
+                <div class="stat-label">待办事项</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statCompleted">0</div>
+                <div class="stat-label">今日完成</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statTotal">0</div>
+                <div class="stat-label">总计任务</div>
+            </div>
+        </section>
+        
+        <!-- 已完成任务历史 -->
+        <section class="completed-section" id="completedSection" style="display: none;">
+            <div class="section-header">
+                <h3><i class="bi bi-check-circle"></i> 今日已完成</h3>
+                <button class="toggle-completed" onclick="toggleCompleted()">
+                    <span>隐藏</span>
+                    <i class="bi bi-chevron-up"></i>
+                </button>
+            </div>
+            <div class="completed-list" id="completedList">
+                <!-- 已完成任务将动态添加到这里 -->
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // 1. 初始化数据
+        let tasks = JSON.parse(localStorage.getItem('counselor_tasks')) || [];
+        let completedTasks = JSON.parse(localStorage.getItem('completed_tasks')) || [];
+        let isCompletedVisible = true;
+        
+        // 2. DOM 元素
+        const taskInput = document.getElementById('taskInput');
+        const addBtn = document.getElementById('addBtn');
+        const taskList = document.getElementById('taskList');
+        const emptyState = document.getElementById('emptyState');
+        const currentDateEl = document.getElementById('currentDate');
+        const taskCountEl = document.getElementById('taskCount');
+        const statPendingEl = document.getElementById('statPending');
+        const statCompletedEl = document.getElementById('statCompleted');
+        const statTotalEl = document.getElementById('statTotal');
+        const completedSection = document.getElementById('completedSection');
+        const completedList = document.getElementById('completedList');
+        
+        // 3. 初始化日期
+        function updateDate() {
+            const now = new Date();
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                weekday: 'long'
+            };
+            currentDateEl.textContent = now.toLocaleDateString('zh-CN', options);
+        }
+        
+        // 4. 添加任务
+        function addTask() {
+            const content = taskInput.value.trim();
+            if (!content) return;
+            
+            const task = {
+                id: Date.now(),
+                content: content,
+                completed: false,
+                createdAt: new Date().toISOString(),
+                category: '日常工作',
+                priority: 3
+            };
+            
+            tasks.unshift(task);
+            taskInput.value = '';
+            saveTasks();
+            renderTasks();
+            updateStats();
+        }
+        
+        // 5. 完成任务（划掉后隐藏）
+        function completeTask(id) {
+            const taskIndex = tasks.findIndex(t => t.id === id);
+            if (taskIndex === -1) return;
+            
+            const task = tasks[taskIndex];
+            
+            // 1. 找到任务DOM元素
+            const taskElement = document.querySelector(`[data-id="${id}"]`);
+            if (!taskElement) return;
+            
+            // 2. 添加划掉效果
+            taskElement.classList.add('completing');
+            const textElement = taskElement.querySelector('.strikethrough-effect');
+            if (textElement) {
+                textElement.classList.add('active');
+            }
+            
+            // 3. 更新复选框
+            const checkbox = taskElement.querySelector('.task-checkbox');
+            if (checkbox) {
+                checkbox.classList.add('checked');
+            }
+            
+            // 4. 显示完成时间
+            const completionTime = taskElement.querySelector('.completion-time');
+            if (completionTime) {
+                completionTime.classList.add('show');
+                completionTime.innerHTML = `<i class="bi bi-clock"></i> 完成于 ${formatTime(new Date())}`;
+            }
+            
+            // 5. 延迟隐藏任务（1.2秒后）
+            setTimeout(() => {
+                taskElement.classList.add('completed-hiding');
+                
+                // 6. 再延迟0.5秒后从待办列表中移除并添加到已完成列表
+                setTimeout(() => {
+                    // 更新任务状态
+                    task.completed = true;
+                    task.completedAt = new Date().toISOString();
+                    
+                    // 从待办数组移到已完成数组
+                    tasks.splice(taskIndex, 1);
+                    completedTasks.unshift(task);
+                    
+                    // 保存数据
+                    saveTasks();
+                    saveCompletedTasks();
+                    
+                    // 重新渲染
+                    renderTasks();
+                    renderCompletedTasks();
+                    updateStats();
+                }, 500);
+            }, 1200);
+        }
+        
+        // 6. 删除任务
+        function deleteTask(id, event) {
+            event.stopPropagation(); // 阻止事件冒泡
+            if (confirm('确定删除这个任务吗？')) {
+                tasks = tasks.filter(t => t.id !== id);
+                saveTasks();
+                renderTasks();
+                updateStats();
+            }
+        }
+        
+        // 7. 保存数据
+        function saveTasks() {
+            localStorage.setItem('counselor_tasks', JSON.stringify(tasks));
+        }
+        
+        function saveCompletedTasks() {
+            localStorage.setItem('completed_tasks', JSON.stringify(completedTasks));
+        }
+        
+        // 8. 渲染待办任务列表
+        function renderTasks() {
+            if (tasks.length === 0) {
+                emptyState.style.display = 'block';
+                taskList.innerHTML = '';
+                taskList.appendChild(emptyState);
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            const fragment = document.createDocumentFragment();
+            
+            tasks.forEach(task => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'task-item';
+                taskItem.dataset.id = task.id;
+                taskItem.onclick = () => completeTask(task.id);
+                
+                const categoryIcon = getCategoryIcon(task.category);
+                
+                taskItem.innerHTML = `
+                    <div class="task-status"></div>
+                    <div class="task-checkbox">
+                        <i class="bi bi-check"></i>
+                    </div>
+                    <div class="task-content">
+                        <div class="task-text">
+                            <span class="strikethrough-effect">${task.content}</span>
+                        </div>
+                        <div class="completion-time"></div>
+                        <div class="task-meta">
+                            <span class="task-category">
+                                <i class="bi ${categoryIcon}"></i> ${task.category}
+                            </span>
+                            <span><i class="bi bi-clock"></i> ${formatTime(new Date(task.createdAt))}</span>
+                        </div>
+                    </div>
+                    <button class="delete-btn" onclick="deleteTask(${task.id}, event)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                `;
+                
+                fragment.appendChild(taskItem);
+            });
+            
+            taskList.innerHTML = '';
+            taskList.appendChild(fragment);
+        }
+        
+        // 9. 渲染已完成任务列表
+        function renderCompletedTasks() {
+            if (completedTasks.length === 0) {
+                completedSection.style.display = 'none';
+                return;
+            }
+            
+            // 只显示今天完成的任务
+            const today = new Date().toDateString();
+            const todayCompleted = completedTasks.filter(task => 
+                new Date(task.completedAt).toDateString() === today
+            );
+            
+            if (todayCompleted.length === 0) {
+                completedSection.style.display = 'none';
+                return;
+            }
+            
+            completedSection.style.display = 'block';
+            
+            const fragment = document.createDocumentFragment();
+            
+            todayCompleted.forEach(task => {
+                const completedItem = document.createElement('div');
+                completedItem.className = 'completed-item';
+                
+                completedItem.innerHTML = `
+                    <i class="bi bi-check-circle-fill" style="color:#10b981"></i>
+                    <span>${task.content}</span>
+                    <small style="margin-left:auto">${formatTime(new Date(task.completedAt))}</small>
+                `;
+                
+                fragment.appendChild(completedItem);
+            });
+            
+            completedList.innerHTML = '';
+            completedList.appendChild(fragment);
+        }
+        
+        // 10. 切换已完成任务显示
+        function toggleCompleted() {
+            const toggleBtn = document.querySelector('.toggle-completed');
+            const icon = toggleBtn.querySelector('i');
+            const text = toggleBtn.querySelector('span');
+            
+            if (isCompletedVisible) {
+                completedList.style.display = 'none';
+                icon.className = 'bi bi-chevron-down';
+                text.textContent = '显示';
+            } else {
+                completedList.style.display = 'grid';
+                icon.className = 'bi bi-chevron-up';
+                text.textContent = '隐藏';
+            }
+            
+            isCompletedVisible = !isCompletedVisible;
+        }
+        
+        // 11. 更新统计数据
+        function updateStats() {
+            const pendingCount = tasks.filter(t => !t.completed).length;
+            const today = new Date().toDateString();
+            const todayCompletedCount = completedTasks.filter(task => 
+                new Date(task.completedAt).toDateString() === today
+            ).length;
+            const totalToday = tasks.length + todayCompletedCount;
+            
+            statPendingEl.textContent = pendingCount;
+            statCompletedEl.textContent = todayCompletedCount;
+            statTotalEl.textContent = totalToday;
+            taskCountEl.textContent = `${pendingCount}项待办`;
+        }
+        
+        // 12. 工具函数
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString('zh-CN', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
+        
+        function formatTime(date) {
+            return date.toLocaleTimeString('zh-CN', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        function getCategoryIcon(category) {
+            const icons = {
+                '日常工作': 'bi-calendar',
+                '学生事务': 'bi-people',
+                '会议安排': 'bi-chat',
+                '紧急处理': 'bi-exclamation'
+            };
+            return icons[category] || 'bi-list';
+        }
+        
+        // 13. 事件监听
+        addBtn.addEventListener('click', addTask);
+        taskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTask();
+        });
+        
+        // 14. 初始化应用
+        function init() {
+            updateDate();
+            renderTasks();
+            renderCompletedTasks();
+            updateStats();
+            
+            // 添加示例数据（首次使用时）
+            if (tasks.length === 0 && completedTasks.length === 0) {
+                tasks = [
+                    {
+                        id: 1,
+                        content: '检查学生早课出勤情况',
+                        completed: false,
+                        createdAt: new Date().toISOString(),
+                        category: '日常工作',
+                        priority: 3
+                    },
+                    {
+                        id: 2,
+                        content: '组织班会讨论安全事项',
+                        completed: false,
+                        createdAt: new Date().toISOString(),
+                        category: '会议安排',
+                        priority: 4
+                    },
+                    {
+                        id: 3,
+                        content: '与转专业学生进行谈话',
+                        completed: false,
+                        createdAt: new Date().toISOString(),
+                        category: '学生事务',
+                        priority: 5
+                    },
+                    {
+                        id: 4,
+                        content: '整理学生心理健康档案',
+                        completed: false,
+                        createdAt: new Date().toISOString(),
+                        category: '日常工作',
+                        priority: 3
+                    }
+                ];
+                
+                saveTasks();
+                renderTasks();
+                updateStats();
+            }
+        }
+        
+        // 15. 启动应用
+        document.addEventListener('DOMContentLoaded', init);
+        
+        // 16. 全局函数
+        window.deleteTask = deleteTask;
+        window.toggleCompleted = toggleCompleted;
+    </script>
+    <script src="https://lf-cdn.coze.cn/obj/unpkg/flow-platform/chat-app-sdk/1.2.0-beta.19/libs/cn/index.js"></script>
+<script>
+  new CozeWebSDK.WebChatClient({
+    config: {
+      bot_id: '7579176190699814958',
+    },
+    componentProps: {
+      title: 'Coze',
+    },
+    auth: {
+      type: 'token',
+      token: 'pat_31N5imA7bFcHcSQf0MEP6PAq0OAjWlJ2dYo4an2A5okob4ccCWNA9Ly5LbTiqU8v',
+      onRefreshToken: function () {
+        return 'pat_31N5imA7bFcHcSQf0MEP6PAq0OAjWlJ2dYo4an2A5okob4ccCWNA9Ly5LbTiqU8v'
+      }
+    }
+  });
+</script>
+</body>
+</html>
